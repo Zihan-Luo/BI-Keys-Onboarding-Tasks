@@ -1,103 +1,87 @@
 --Q1. a.Display a list of all property names and their property id’s for Owner Id: 1426. 
 
-SELECT [Name],
-	     [PropertyId]
-  FROM [Property] P
-  inner join [OwnerProperty] O on P.Id = O.PropertyId
-  WHERE OwnerId = 1426 
+ SELECT [Name],
+        [PropertyId]
+  	FROM [Property] P
+  	INNER JOIN [OwnerProperty] O on P.Id = O.PropertyId
+  	WHERE OwnerId = 1426 
   
 --Q1. b.Display the current home value for each property in question a).
 
-SELECT Q1A.PropertyId, 
-       Q1A.Name, 
+SELECT P.Name PropertyName,
+       P.ID PropertyID,
        PHV.Value CurrentHomeValue
-  FROM [PropertyHomeValue] PHV
-  inner join
-	(SELECT [Name],
-			    [PropertyId]
-	   FROM [Property] P
-	   inner join [OwnerProperty] O on P.Id = O.PropertyId
-	   WHERE OwnerId = 1426) Q1A
-	on PHV.PropertyId = Q1A.PropertyId
-  WHERE PHV.HomeValueTypeId =1
-  ORDER BY Q1A.PropertyId 
+	   FROM OwnerProperty OP
+	   INNER JOIN Property p ON OP.PropertyID =P.ID
+	   INNER JOIN PropertyHomeValue PHV ON P.ID = PHV.PropertyId
+       WHERE OP.OwnerId = 1426 and PHV.IsActive = 1 
+       ORDER BY P.Name
   
 --Q1. c.For each property in question a), return the following:                                                                      
 --	i.Using rental payment amount, rental payment frequency, tenant start date and tenant end date to write a query that returns the sum of all payments from start date to end date. 
 --	ii.Display the yield.
-SELECT TP.[Id]
-      ,[TenantId]
-      ,TP.[PropertyId]
-      ,[StartDate]
-      ,[EndDate]
-      ,[PaymentFrequencyId]
-      ,[PaymentAmount]
-	  ,[PaymentAmount]*DATEDIFF(WEEK,'2018-01-01','2018-12-31') SumofAllPayment
-  FROM [Keys].[dbo].[TenantProperty] TP
-  inner join OwnerProperty OP on TP.PropertyId = OP.PropertyId
-  WHERE OP.OwnerId = 1426 and PaymentFrequencyId = 1
-UNION
-SELECT TP.[Id]
-      ,[TenantId]
-      ,TP.[PropertyId]
-      ,[StartDate]
-      ,[EndDate]
-      ,[PaymentFrequencyId]
-      ,[PaymentAmount]
-	  ,[PaymentAmount]*DATEDIFF(WEEK,'2018-01-01','2018-12-31')/2 SumofAllPayment
-  FROM [Keys].[dbo].[TenantProperty] TP
-  inner join OwnerProperty OP on TP.PropertyId = OP.PropertyId
-  WHERE OP.OwnerId = 1426 and PaymentFrequencyId = 2
-UNION
-SELECT TP.[Id]
-      ,[TenantId]
-      ,TP.[PropertyId]
-      ,[StartDate]
-      ,[EndDate]
-      ,[PaymentFrequencyId]
-      ,[PaymentAmount]
-	  ,[PaymentAmount]*(DATEDIFF(MONTH,'2018-01-01','2018-12-31')+1) SumofAllPayment
-  FROM [Keys].[dbo].[TenantProperty] TP
-  inner join OwnerProperty OP on TP.PropertyId = OP.PropertyId
-  WHERE OP.OwnerId = 1426 and PaymentFrequencyId = 3
+    SELECT P.Name PropertyName,
+	   P.ID PropertyID,
+	   CASE 
+		   WHEN TRT.Name ='Weekly' THEN (DATEDIFF(wk, TP.StartDate, TP.EndDate)*PRP.Amount)
+		   WHEN TRT.Name = 'Fortnightly' THEN ((DATEDIFF(wk, TP.StartDate, TP.EndDate)/2)*PRP.Amount)
+		   ELSE (DATEDIFF(m, TP.StartDate, TP.EndDate)*PRP.Amount)
+	   END AS SumOfPayments,
+	   TRT.Name RentalPaymentFrequency,
+	   PRP.Amount RentalPaymentAmount,
+	   ((CASE 
+		   WHEN TRT.Name ='Weekly' THEN (DATEDIFF(wk, TP.StartDate, TP.EndDate)*PRP.Amount)
+		   WHEN TRT.Name = 'Fortnightly' THEN ((DATEDIFF(wk, TP.StartDate, TP.EndDate)/2)*PRP.Amount)
+		   ELSE (DATEDIFF(m, TP.StartDate, TP.EndDate)*PRP.Amount)
+		   END
+	   )/PHV.Value)*100 Yield,
+	   TP.StartDate TenantStartDate,
+	   TP.EndDate TenantEndDate
+	   FROM Property P
+		    INNER JOIN OwnerProperty OP ON P.ID = OP.PropertyID
+			INNER JOIN PropertyRentalPayment PRP ON P.ID = PRP.PropertyID
+			INNER JOIN TargetRentType TRT ON PRP.FrequencyType = TRT.ID
+			INNER JOIN TenantProperty TP ON P.ID = TP.PropertyID
+			INNER JOIN PropertyHomeValue PHV ON P.ID = PHV.PropertyID
+	   WHERE OP.OwnerId = 1426
   
 --1. d.Display all the jobs available
 SELECT J.[Id]
-      ,[ProviderId]
-      ,[PropertyId]
-      ,[OwnerId]
-      ,[PaymentAmount]
-      ,[JobStartDate]
-      ,[JobEndDate]
-      ,[JobDescription]
-      ,[JobStatusId]
-      ,[UpdatedBy]
-      ,[CreatedOn]
-      ,[CreatedBy]
-      ,[UpdatedOn]
-      ,[MaxBudget]
-      ,[PercentDone]
-      ,[Note]
-      ,[AcceptedQuote]
-      ,[OwnerUpdate]
-      ,[ServiceUpdate]
-      ,[JobRequestId]
-  FROM [Keys].[dbo].[Job] J
-  inner join JobStatus JS on J.JobStatusId = JS.Id
-  WHERE JS.Status = 'Open'
+       ,[ProviderId]
+       ,J.[PropertyId]
+       ,[OwnerId]
+       ,[PaymentAmount]
+       ,[JobStartDate]
+       ,[JobEndDate]
+       ,[JobDescription]
+       ,[JobStatusId]
+       ,[UpdatedBy]
+       ,[CreatedOn]
+       ,[CreatedBy]
+       ,[UpdatedOn]
+       ,[MaxBudget]
+       ,[PercentDone]
+       ,[Note]
+       ,[AcceptedQuote]
+       ,[OwnerUpdate]
+       ,[ServiceUpdate]
+       ,[JobRequestId]
+       FROM [Keys].[dbo].[Job] J
+       INNER JOIN JobMedia JM on J.Id = JM.JobId
+       WHERE JM.IsActive = 1
   
 --1. e.Display all property names, current tenants first and last names and rental payments per week/ fortnight/month for the properties in question a).  
-SELECT P.Name PropetyName,
+    SELECT P.Name PropetyName,
 	   PS.FirstName TenantFirstName,
 	   PS.LastName TenantLastName,
 	   TP.PaymentAmount RentalAmount,
 	   TPF.Name PaymentFrequency
-FROM OwnerProperty OP inner join Property P on OP.PropertyId = P.Id
-inner join TenantProperty TP on P.Id = TP.PropertyId
-inner join PropertyRentalPayment PRP on TP.PropertyId = PRP.PropertyId
-inner join TenantPaymentFrequencies TPF on PRP.FrequencyType = TPF.Id
-inner join Person PS on PS.Id = TP.TenantId
-WHERE OP.OwnerId = 1426
+	   FROM OwnerProperty OP inner join Property P on OP.PropertyId = P.Id
+			INNER JOIN TenantProperty TP on P.Id = TP.PropertyId
+			INNER JOIN PropertyRentalPayment PRP on TP.PropertyId = PRP.PropertyId
+			INNER JOIN TenantPaymentFrequencies TPF on PRP.FrequencyType = TPF.Id
+			INNER JOIN Person PS on PS.Id = TP.TenantId
+	   WHERE OP.OwnerId = 1426
 
 
 
