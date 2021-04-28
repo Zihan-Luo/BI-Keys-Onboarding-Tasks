@@ -83,5 +83,32 @@ SELECT J.[Id]
 			INNER JOIN Person PS on PS.Id = TP.TenantId
 	   WHERE OP.OwnerId = 1426
 
-
+--2. Use Report Builder or Visual Studio (SSRS) to develop the following report.
+	SELECT P.Id PropertyId,
+	   P.AddressId, 
+	   P.Name PropertyName, 
+	   P.Bedroom, 
+	   P.Bathroom, 
+	   A.number AddressNumber, 
+	   A.street Address, 
+	   PE.Amount, 
+	   PRT.Amount RentalPayment,
+	   CASE 
+		   WHEN TPF.Name ='Weekly' Then 'Week'
+		   WHEN TPF.Name ='Fortnightly' Then 'Fortnight'
+		   ELSE 'Month'
+	   END PaymentFrequencies,
+	   OP.OwnerId, 
+	   PS.FirstName OwnerFirstName, 
+	   PS.LastName OwnerLastName,
+	   P.CreatedOn,
+	   PE.Description
+	FROM Property P
+	   INNER JOIN Address A ON P.addressid = A.addressid
+	   INNER JOIN PropertyExpense PE on P.Id = PE.PropertyId
+	   INNER JOIN OwnerProperty OP on P.Id = OP.PropertyId
+	   INNER JOIN Person PS on OP.OwnerId = PS.Id
+ 	   INNER JOIN PropertyRentalPayment PRT on P.Id = PRT.PropertyId
+	   INNER JOIN TenantPaymentFrequencies TPF on PRT.FrequencyType = TPF.Id
+        WHERE P.name = 'Property A'  
 
