@@ -95,7 +95,8 @@ Task 1.d.	Display all the jobs available in the marketplace (jobs that owners ha
            j.JobDescription,  
            Count(jm.Id) AS NoOfJobMedia  
     FROM Job AS j  
-    INNER JOIN JobMedia AS jm ON j.Id=jm.JobId WHERE jm.IsActive=1  
+    INNER JOIN JobMedia AS jm ON j.Id=jm.JobId  
+    WHERE jm.IsActive=1  
     GROUP BY j.Id, j.PropertyId, j.OwnerId, j.JobDescription  
 ![image](https://github.com/Zihan-Luo/Property-Analysis-Standard-Sprint--On-boarding-Task/blob/c4cf8d33ade5465f5291e1cd2f433f10914c08d2/images/5.png)
 
@@ -107,7 +108,8 @@ Task 1.d.	Display all the jobs available in the marketplace (jobs that owners ha
            j.JobDescription,  
            jm.IsActive 
     FROM Job AS j  
-    INNER JOIN JobMedia AS jm ON j.Id=jm.JobId WHERE jm.IsActive=1  
+    INNER JOIN JobMedia AS jm ON j.Id=jm.JobId  
+    WHERE jm.IsActive=1  
 ![image](https://github.com/Zihan-Luo/Property-Analysis-Standard-Sprint--On-boarding-Task/blob/c4cf8d33ade5465f5291e1cd2f433f10914c08d2/images/6.png)
 
 --
@@ -127,3 +129,51 @@ Task 1.e.	Display all property names, current tenants first and last names and r
     INNER JOIN TargetRentType AS trt ON prp.FrequencyType=trt.Id  
     WHERE op.OwnerId=1426;  
 ![image](https://github.com/Zihan-Luo/Property-Analysis-Standard-Sprint--On-boarding-Task/blob/c4cf8d33ade5465f5291e1cd2f433f10914c08d2/images/7.png)
+
+--Task 2 Use Report Builder or Visual Studio (SSRS) to develop the following report:
+![image](https://github.com/Zihan-Luo/Property-Analysis-Standard-Sprint--On-boarding-Task/blob/34dbe01057238fa87c254108e6823f51fc2b0a77/images/task%202%20question.png)
+
+ Solution, Data Set Query: 
+ 
+    Select p.Id,p.[Name] AS PropertyName,  
+           RTRIM(LTRIM(  
+                        CONCAT(  
+                               COALESCE(Person.FirstName + ' ', ''),  
+                               COALESCE(Person.MiddleName + ' ', ''),  
+                               COALESCE(Person.Lastname, '')  
+                              )  
+                       )  
+                 ) AS OwnerName,   
+            RTRIM(LTRIM(  
+                        CONCAT(  
+                               COALESCE(a.Number + ' ', ''),  
+                               COALESCE(a.Street + ' ', ''),  
+                               COALESCE(a.Suburb + ' ', ''),  
+                               COALESCE(a.PostCode + ' ', ''),  
+                               COALESCE(a.Region + ' ', ''),  
+                               COALESCE(Country.[Name], '')  
+                              )  
+                        )  
+                   ) AS PropertyAddress,   
+            CONCAT(p.Bathroom,' Bathroom, ',p.Bedroom,' Bedroom, ',p.ParkingSpace,' ParkingSpace') AS PropertyDetails,  
+            prp.Amount as RentalAmount,  
+            CASE WHEN trt.[Name] ='Weekly' THEN 'Week'  
+                 WHEN trt.[Name] ='Fortnightly' THEN 'Fortnight' ELSE 'Month'  
+            END AS RentalPaymentFrequency,  
+            e.[Description],  
+            e.Amount,  
+            e.[Date]  
+    FROM Property AS p  
+    INNER JOIN OwnerProperty AS op ON p.Id=op.PropertyId  
+    INNER JOIN Owners AS o ON op.OwnerId=o.Id  
+    INNER JOIN Person ON o.Id=Person.Id  
+    INNER JOIN [Address] AS a ON p.AddressId=a.AddressId  
+    INNER JOIN Country ON a.CountryId=Country.Id  
+    INNER JOIN PropertyRentalPayment AS prp ON p.Id=prp.PropertyId  
+    INNER JOIN TargetRentType as trt ON prp.FrequencyType=trt.Id  
+    LEFT JOIN PropertyExpense AS e ON p.Id=e.PropertyId  
+    WHERE p.[Name]=@Property  
+    
+![image](https://github.com/Zihan-Luo/Property-Analysis-Standard-Sprint--On-boarding-Task/blob/34dbe01057238fa87c254108e6823f51fc2b0a77/images/8.png)
+
+![image](https://github.com/Zihan-Luo/Property-Analysis-Standard-Sprint--On-boarding-Task/blob/34dbe01057238fa87c254108e6823f51fc2b0a77/images/9.png)
