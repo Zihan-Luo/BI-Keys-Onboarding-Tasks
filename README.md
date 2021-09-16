@@ -33,8 +33,8 @@ Task 1.b Display the current home value for each property in question a)
  ![image](https://github.com/Zihan-Luo/Property-Analysis-Standard-Sprint--On-boarding-Task/blob/749d5b8af6b467960e5314e458dad1ab3196499b/images/2.png)   
  
  --
-Task 1.c For each property in question a), return the following:
-i)Using rental payment amount, rental payment frequency, tenant start date and tenant end date to write a query that returns the sum of all payments from start date to end date.
+Task 1.c For each property in question a), return the following:  
+i) Using rental payment amount, rental payment frequency, tenant start date and tenant end date to write a query that returns the sum of all payments from start date to end date.
 
     SELECT p.[Name] AS PropertyName,  
            p.Id AS PropertyID,  
@@ -53,3 +53,34 @@ i)Using rental payment amount, rental payment frequency, tenant start date and t
     INNER JOIN TenantProperty AS tp ON p.Id=tp.PropertyId  
     WHERE op.OwnerId=1426;  
 ![image](https://github.com/Zihan-Luo/Property-Analysis-Standard-Sprint--On-boarding-Task/blob/749d5b8af6b467960e5314e458dad1ab3196499b/images/3.png)
+
+--
+Task 1.c For each property in question a), return the following:  
+ii) Display the yield.
+
+
+    SELECT p.[Name] AS PropertyName,  
+           p.Id AS PropertyID,  
+           phv.[Value] AS HomeValue,  
+           (  
+               (  
+                   (CASE WHEN trt.[Name] ='Weekly' THEN (DATEDIFF(wk,tp.StartDate, tp.EndDate)*prp.Amount)  
+                         WHEN trt.[Name] ='Fortnightly' THEN ((DATEDIFF(wk,tp.StartDate, tp.EndDate)/2)*prp.Amount)  
+                         ELSE (DATEDIFF(m,tp.StartDate, tp.EndDate)*prp.Amount)  
+                    END)  
+               -ISNULL(SUM(pe.Amount),0)  
+               )/phv.[Value]  
+            )*100 AS Yield,  
+            trt.[Name] AS RentalPaymentFrequency,  
+            prp.Amount AS RentalPaymentAmount,  
+            tp.StartDate AS TenantStartDate,  
+            tp.EndDate AS TenantEndDate FROM Property AS p  
+    INNER JOIN OwnerProperty AS op ON p.Id=op.PropertyId  
+    INNER JOIN PropertyRentalPayment AS prp ON p.Id=prp.PropertyId  
+    INNER JOIN TargetRentType AS trt ON prp.FrequencyType=trt.Id  
+    INNER JOIN TenantProperty AS tp ON p.Id=tp.PropertyId  
+    INNER JOIN PropertyHomeValue AS phv	ON p.Id=phv.PropertyId  
+    LEFT JOIN PropertyExpense AS pe ON p.Id=pe.PropertyId  
+    WHERE op.OwnerId=1426 AND phv.IsActive=1  
+    GROUP BY p.[Name],p.Id,phv.[Value],trt.[Name],prp.Amount,tp.StartDate,tp.EndDate;  
+![image](https://github.com/Zihan-Luo/Property-Analysis-Standard-Sprint--On-boarding-Task/blob/4d66a5237d87a278b188d4e825acb9a4bdce4990/images/4.png)
